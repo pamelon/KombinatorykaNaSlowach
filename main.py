@@ -51,13 +51,21 @@ def human_turn(word, alf):
     return word
 
 
-def pc_strategy(word, word_length, alf):
+def pc_strategy_basic(word, word_length, alf):
     word += alf[0]
     return word
 
+#Take a word and never create repetitions of lenght less than 4.
+def pc_strategy_article(word, word_length, alf):
+    first_part_word = word[0:3]
+    for letter in alf:
+        if letter not in first_part_word:
+            word += letter
+            break
+    return word
 
 def pc_turn(word, word_length, alf):
-    word = pc_strategy(word, word_length, alf)
+    word = pc_strategy_article(word, word_length, alf)
     new_word, changed = check_for_repetitions(word)
     if changed:
         print(f"PC {word} -> {new_word}")
