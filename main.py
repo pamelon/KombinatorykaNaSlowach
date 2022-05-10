@@ -25,7 +25,7 @@ def check_for_repetitions(word):
     reversed_word = word[::-1]
     for i in range(1, int(ceil(len(word)/2)+1)):
         if reversed_word[:i] == reversed_word[i:2*i]:
-            return reversed_word[2*i:][::-1],True
+            return reversed_word[i:][::-1],True
     return word, False
 
 def human_turn(word, alf):
@@ -57,7 +57,7 @@ def pc_strategy_basic(word, word_length, alf):
 
 #Take a word and never create repetitions of lenght less than 4.
 def pc_strategy_article(word, word_length, alf):
-    first_part_word = word[0:3]
+    first_part_word = word[-3:]
     for letter in alf:
         if letter not in first_part_word:
             word += letter
