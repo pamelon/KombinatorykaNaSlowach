@@ -2,7 +2,6 @@
 # pylint: disable=invalid-name, too-many-instance-attributes, too-many-arguments
 
 import argparse
-from strategy import Basic
 from math import ceil
 
 def begin_game(strategy):
@@ -50,7 +49,6 @@ def human_turn(word, alf):
 
     return word
 
-
 def pc_strategy_basic(word, word_length, alf):
     word += alf[0]
     return word
@@ -85,13 +83,16 @@ def run_game(alf_length, word_length, round_length):
         word = pc_turn(word, word_length, alf)
         if len(word) >= word_length:
             outcome = False
+            #we finish game if the word is long enough that we lose
+            return outcome
         word = human_turn(word, alf)
         if word == 'q':
             return
         if len(word) >= word_length:
             outcome = False
+            #we finish game if the word is long enough that we lose
+            return outcome
     return outcome
-
 
 def main():
     parser = argparse.ArgumentParser(formatter_class=argparse.RawTextHelpFormatter)
