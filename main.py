@@ -3,6 +3,7 @@
 
 import argparse
 from math import ceil
+from random import randint
 
 def begin_game(strategy):
     print("Cześć, witaj w grze w zmazywanie repetycji!")
@@ -18,7 +19,7 @@ def begin_game(strategy):
     print("Gramy wielkimi literami A-{}, na słowo maksymalnej długości {}, na {} rund. \n"\
         .format(last_letter, word_length, round_length))
 
-    return run_game(alf_length, word_length, round_length)
+    return run_game(alf_length, word_length, round_length, strategy)
 
 def check_for_repetitions(word):
     reversed_word = word[::-1]
@@ -49,12 +50,12 @@ def human_turn(word, alf):
 
     return word
 
-def pc_strategy_basic(word, word_length, alf):
+def pc_strategy_first_symbol(word, alf):
     word += alf[0]
     return word
 
 #Take a word and never create repetitions of lenght less than 4.
-def pc_strategy_article(word, word_length, alf):
+def pc_strategy_article(word, alf):
     first_part_word = word[-3:]
     for letter in alf:
         if letter not in first_part_word:
@@ -62,8 +63,8 @@ def pc_strategy_article(word, word_length, alf):
             break
     return word
 
-def pc_turn(word, word_length, alf):
-    word = pc_strategy_article(word, word_length, alf)
+def pc_turn(word, word_length, alf, strategy):
+    word = globals()[strategy](word, alf)
     new_word, changed = check_for_repetitions(word)
     if changed:
         print(f"PC {word} -> {new_word}")
@@ -71,16 +72,60 @@ def pc_turn(word, word_length, alf):
         print(f"PC {word}")
     return new_word
 
+def pc_strategy_furthest(word, alf):
+    #a letter has not appeared before, add it and return
+    if len(list(set(list(word)))) < len(alf):
+        for letter in alf:
+            if letter not in word:
+                word += letter
+                return word
+
+    #if all letters have appeared at some point, let's see which one is the furthest in the word
+    #reversing the string in the for loop
+    appeared = []
+    for letter in word[::-1]:
+        appeared.append(letter)
+        appeared = list(set(list(appeared)))
+        if len(appeared) == len(alf) -1:
+            new_letter = list(set(alf) - set(appeared)) + list(set(alf) - set(appeared))
+            word += new_letter[0]
+            return word
+
+    return word
+
+def pc_strategy_bigrams(word, alf):
+    #a letter has not appeared before, add it and return
+    if len(list(set(list(word)))) < len(alf):
+        for letter in alf:
+            if letter not in word:
+                word += letter
+                return word
+
+    #if all letters have appeared at some point, let's see if we can not create a bigram in the next turn
+    #reversing the string in the for loop
+    appeared_after = []
+    last_letter = word[-1]
+    for i in range(len(word)-1):
+        if word[i] == last_letter:
+            appeared_after.append(word[i+1])
+    #if bigram will happen anyway, lets add a random letter
+    if len(appeared_after) >= len(alf) -1:
+        random_number = randint(0, len(alf) -1)
+        word += alf[random_number]
+        return word
+    new_letter = list(set(alf) - set(appeared_after)) + list(set(alf) - set(appeared_after))
+    word += new_letter[0]
+    return word
 
 #True - wygraliśmy my, False - wygrał komputer
-def run_game(alf_length, word_length, round_length):
+def run_game(alf_length, word_length, round_length, strategy):
     alf = [chr(ord('A')+i) for i in range(alf_length)]
     print(alf)
     outcome = True
 
     word = ''
     for i in range(round_length):
-        word = pc_turn(word, word_length, alf)
+        word = pc_turn(word, word_length, alf, strategy)
         if len(word) >= word_length:
             outcome = False
             #we finish game if the word is long enough that we lose
@@ -97,8 +142,8 @@ def run_game(alf_length, word_length, round_length):
 def main():
     parser = argparse.ArgumentParser(formatter_class=argparse.RawTextHelpFormatter)
 
-    parser.add_argument('-s', '--strategy', dest='strategy', type=int, default=0,
-                        help='chosen strategy for the computer player')
+    parser.add_argument('-s', '--strategy', dest='strategy', choices=('pc_strategy_first_symbol', 'pc_strategy_article', 'pc_strategy_furthest', 'pc_strategy_bigrams'),
+                        default='pc_strategy_article', help='chosen strategy for the computer player')
     args = vars(parser.parse_args())
 
     result = begin_game(args['strategy'])
