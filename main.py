@@ -50,6 +50,37 @@ def human_turn(word, alf):
 
     return word
 
+def pc_turn(word, word_length, alf, strategy):
+    word = globals()[strategy](word, alf)
+    new_word, changed = check_for_repetitions(word)
+    if changed:
+        print(f"PC {word} -> {new_word}")
+    else:
+        print(f"PC {word}")
+    return new_word
+
+#check if adding a new given letter will create a repetition
+def check_for_repetitions_add_letter(word, letter):
+    reversed_word = (word + letter)[::-1]
+    for i in range(1, int(ceil(len(word)/2)+1)):
+        if reversed_word[:i] == reversed_word[i:2*i]:
+            return True
+    return False
+
+#we check if there are no repetitions, then we add the letter
+#if all letters create a repetition, add the first letter
+def pc_strategy_no_repetitions(word, alf):
+    for letter in alf:
+        if check_for_repetitions_add_letter(word, letter):
+            continue
+        else:
+            word +=letter
+            return word
+
+    word += alf[0]
+    return word
+
+#dummy strategy for checking the game running
 def pc_strategy_first_symbol(word, alf):
     word += alf[0]
     return word
@@ -62,15 +93,6 @@ def pc_strategy_article(word, alf):
             word += letter
             break
     return word
-
-def pc_turn(word, word_length, alf, strategy):
-    word = globals()[strategy](word, alf)
-    new_word, changed = check_for_repetitions(word)
-    if changed:
-        print(f"PC {word} -> {new_word}")
-    else:
-        print(f"PC {word}")
-    return new_word
 
 def pc_strategy_furthest(word, alf):
     #a letter has not appeared before, add it and return
@@ -88,9 +110,19 @@ def pc_strategy_furthest(word, alf):
         appeared = list(set(list(appeared)))
         if len(appeared) == len(alf) -1:
             new_letter = list(set(alf) - set(appeared)) + list(set(alf) - set(appeared))
-            word += new_letter[0]
-            return word
+            #if this letter does not create a repetition
+            if not check_for_repetitions_add_letter(word, new_letter[0]):
+                word += new_letter[0]
+                return word
+            #we go from the last one, if the last letter creates a repetition
+            #take the furthest one which does not create a repetiton
+            for ap_letter in appeared:
+                if not check_for_repetitions_add_letter(word, ap_letter):
+                    word += ap_letter
+                    return word
 
+    #if all create a repetition, add the first one
+    word += alf[0]
     return word
 
 def pc_strategy_bigrams(word, alf):
@@ -113,8 +145,17 @@ def pc_strategy_bigrams(word, alf):
         random_number = randint(0, len(alf) -1)
         word += alf[random_number]
         return word
-    new_letter = list(set(alf) - set(appeared_after)) + list(set(alf) - set(appeared_after))
-    word += new_letter[0]
+
+    no_bigram_letters = list(set(alf) - set(appeared_after)) + list(set(alf) - set(appeared_after))
+    #we go through all the letters that does not create bigrams
+    #take the one which does not create a repetiton if possible
+    for no_bi_letter in no_bigram_letters:
+        if not check_for_repetitions_add_letter(word, no_bi_letter):
+            word += no_bi_letter
+            return word
+    
+    #if all create a repetition, add the first one
+    word += alf[0]
     return word
 
 #True - wygraliśmy my, False - wygrał komputer
@@ -142,7 +183,7 @@ def run_game(alf_length, word_length, round_length, strategy):
 def main():
     parser = argparse.ArgumentParser(formatter_class=argparse.RawTextHelpFormatter)
 
-    parser.add_argument('-s', '--strategy', dest='strategy', choices=('pc_strategy_first_symbol', 'pc_strategy_article', 'pc_strategy_furthest', 'pc_strategy_bigrams'),
+    parser.add_argument('-s', '--strategy', dest='strategy', choices=('pc_strategy_first_symbol', 'pc_strategy_article', 'pc_strategy_furthest', 'pc_strategy_bigrams', 'pc_strategy_no_repetitions'),
                         default='pc_strategy_article', help='chosen strategy for the computer player')
     args = vars(parser.parse_args())
 
